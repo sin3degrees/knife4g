@@ -37,7 +37,7 @@ func init() {
 	}
 }
 
-func Handler(config Config, app *iris.Application) iris.Handler {
+func Handler(config Config) iris.Handler {
 	docJsonPath := config.RelativePath + "/docJson"
 	servicesPath := config.RelativePath + "/front/service"
 	docPath := config.RelativePath + "/index"
@@ -84,8 +84,14 @@ func Handler(config Config, app *iris.Application) iris.Handler {
 			ctx.StatusCode(http.StatusOK)
 			ctx.Write(docJson)
 		default:
-			//fs := http.FS(front)
-			app.HandleDir(strings.TrimPrefix(ctx.Path(), config.RelativePath), front)
+			// 一下由*gin.Context.FileFromFS()修改而来
+			filepath := strings.TrimPrefix(ctx.Path(), config.RelativePath)
+			fs := http.FS(front)
+			defer func(old string) {
+				ctx.Request().URL.Path = old
+			}(ctx.Request().URL.Path)
+			ctx.Request().URL.Path = filepath
+			http.FileServer(fs).ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 		}
 
 	}
