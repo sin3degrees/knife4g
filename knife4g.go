@@ -84,8 +84,8 @@ func Handler(config Config, app *iris.Application) iris.Handler {
 			ctx.StatusCode(http.StatusOK)
 			ctx.Write(docJson)
 		default:
-			fs := http.FS(front)
-			app.HandleDir(strings.TrimPrefix(ctx.Path(), config.RelativePath), fs)
+			//fs := http.FS(front)
+			app.HandleDir(strings.TrimPrefix(ctx.Path(), config.RelativePath), front)
 		}
 
 	}
