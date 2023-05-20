@@ -2,12 +2,13 @@ package knife4g
 
 import (
 	"embed"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"text/template"
+
+	"github.com/kataras/iris/v12"
 )
 
 var (
@@ -36,7 +37,7 @@ func init() {
 	}
 }
 
-func Handler(config Config) gin.HandlerFunc {
+func Handler(config Config, app *iris.Application) iris.Handler {
 	docJsonPath := config.RelativePath + "/docJson"
 	servicesPath := config.RelativePath + "/front/service"
 	docPath := config.RelativePath + "/index"
@@ -60,28 +61,31 @@ func Handler(config Config) gin.HandlerFunc {
 		log.Println(err)
 	}
 
-	return func(ctx *gin.Context) {
-		if ctx.Request.Method != http.MethodGet {
-			ctx.AbortWithStatus(http.StatusMethodNotAllowed)
+	return func(ctx iris.Context) {
+		if ctx.Method() != http.MethodGet {
+			ctx.StopWithStatus(http.StatusMethodNotAllowed)
 			return
 		}
-		switch ctx.Request.RequestURI {
+		switch ctx.Path() {
 		case appjsPath:
-			err := appjsTemplate.Execute(ctx.Writer, config)
+			err := appjsTemplate.Execute(ctx.ResponseWriter(), config)
 			if err != nil {
 				log.Println(err)
 			}
 		case servicesPath:
-			ctx.JSON(http.StatusOK, []service{s})
+			ctx.JSON([]service{s})
 		case docPath:
-			err := docTemplate.Execute(ctx.Writer, config)
+			err := docTemplate.Execute(ctx.ResponseWriter(), config)
 			if err != nil {
 				log.Println(err)
 			}
 		case docJsonPath:
-			ctx.Data(http.StatusOK, "application/json; charset=utf-8", docJson)
+			ctx.ContentType("application/json; charset=utf-8")
+			ctx.StatusCode(http.StatusOK)
+			ctx.Write(docJson)
 		default:
-			ctx.FileFromFS(strings.TrimPrefix(ctx.Request.RequestURI, config.RelativePath), http.FS(front))
+			fs := http.FS(front)
+			app.HandleDir(strings.TrimPrefix(ctx.Path(), config.RelativePath), fs)
 		}
 
 	}
