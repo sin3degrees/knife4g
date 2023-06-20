@@ -19,7 +19,8 @@ var (
 )
 
 type Config struct {
-	RelativePath string
+	RelativePath   string
+	SwaggerVersion string
 }
 
 type service struct {
@@ -47,6 +48,9 @@ func Handler(config Config) iris.Handler {
 	s.Location = "/docJson"
 	s.Name = "API Documentation"
 	s.SwaggerVersion = "2.0"
+	if config.SwaggerVersion != "" {
+		s.SwaggerVersion = config.SwaggerVersion
+	}
 
 	appjsTemplate, err := template.New("app.42aa019b.js").
 		Delims("{[(", ")]}").
@@ -84,7 +88,7 @@ func Handler(config Config) iris.Handler {
 			ctx.StatusCode(http.StatusOK)
 			ctx.Write(docJson)
 		default:
-			// 一下由*gin.Context.FileFromFS()修改而来
+			// 以下由*gin.Context.FileFromFS()修改而来
 			filepath := strings.TrimPrefix(ctx.Path(), config.RelativePath)
 			fs := http.FS(front)
 			defer func(old string) {
