@@ -18,7 +18,7 @@ use knife4j-front to show the api documents for iris
     
     func main() {
         engine := iris.Default()
-        engine.Get("/doc/*any", knife4g.Handler(knife4g.Config{RelativePath: "/doc"}))
+        engine.Get("/doc/*any", knife4g.Handler(knife4g.Config{RelativePath: "/doc", SwaggerVersion: "2.0"}))
         engine.Run(":80")
     }
     ```
